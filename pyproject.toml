@@ -9,6 +9,7 @@ description = "SignalCap interview-to-financial-model pipeline"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.110",
+    "openai>=1.0",
     "pydantic>=2.0",
     "uvicorn[standard]>=0.27",
 ]
@@ -23,6 +24,7 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+pythonpath = ["src"]
 
 [tool.setuptools.packages.find]
-include = ["signalcap*"]
+where = ["src"]

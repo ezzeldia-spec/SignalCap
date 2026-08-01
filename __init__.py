@@ -1,1 +1,0 @@
-"""SignalCap application package."""
