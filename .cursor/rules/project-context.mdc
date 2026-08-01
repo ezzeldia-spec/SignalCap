@@ -1,0 +1,39 @@
+---
+description: Core architecture and requirements for SignalCap.
+globs: ["*"]
+alwaysApply: true
+---
+# Project: SignalCap
+A data pipeline that converts qualitative user interview transcripts into deterministic financial models.
+
+## Stack
+Python 3.11+, FastAPI, Pydantic, OpenAI API (or equivalent LLM SDK), Pytest.
+
+## Architecture Requirements
+1. Data Schemas (Pydantic):
+- Define an InterviewTranscript input schema.
+- Define an ExtractedSignals schema containing typed fields for: willingness_to_pay (float, USD, represents monthly ARPU per customer), estimated_cac (float, USD), monthly_churn_percentage (float, expressed as a decimal fraction between 0 and 1), expected_conversion_rate (float, expressed as a decimal fraction between 0 and 1, representing leads-to-customer conversion rate), and monthly_leads (int, the number of new leads entering the funnel each month). 
+- Add Pydantic validators to enforce that monthly_churn_percentage and expected_conversion_rate are within [0, 1], and that monthly_leads, willingness_to_pay, and estimated_cac are non-negative.
+- Define a ProjectionResponse schema to strictly type the output of the FastAPI endpoint.
+
+2. Extraction Module (LLM Layer):
+- Implement an asynchronous service class that accepts raw transcript text.
+- Use structured outputs (tool calling/JSON mode) to force the LLM to extract data matching the ExtractedSignals schema exactly.
+- Implement fallback error handling for missing or malformed extraction data.
+
+3. Financial Engine (Deterministic Layer):
+- Implement a SaaSFinancialModel Python class.
+- Initialize using the validated ExtractedSignals object.
+- Assume a simple funnel model: each month, new_customers = monthly_leads * expected_conversion_rate, and the existing customer base decays by monthly_churn_percentage before adding new customers.
+- Write pure Python methods to calculate a 12-month projection for:
+  - Monthly Recurring Revenue (MRR): active customers × willingness_to_pay, projected month over month.
+  - Customer Acquisition Cost (CAC) Payback Period: estimated_cac / willingness_to_pay, expressed in months.
+  - Customer Lifetime Value (LTV): formula LTV = willingness_to_pay / monthly_churn_percentage. Explicitly cap at 60 months for the zero-churn fallback to prevent division by zero.
+
+4. API Routing:
+- Build an async FastAPI endpoint /api/v1/generate-model that orchestrates this flow: ingest transcript -> extract signals -> calculate financials -> return the ProjectionResponse JSON.
+
+5. Testing:
+- Write a complete Pytest suite.
+- Mock the LLM extraction layer to prevent API calls during testing.
+- Write strict unit tests for the SaaSFinancialModel class to verify the accuracy of the financial logic. Ensure edge cases (zero churn, zero conversion, zero leads) do not throw unhandled exceptions.
