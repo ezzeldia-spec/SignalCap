@@ -1,7 +1,7 @@
 """FastAPI dependency providers."""
 
-from signalcap.extraction import SignalExtractionService
+from signalcap.extraction import SignalExtractor
 
 
-def get_extraction_service() -> SignalExtractionService:
-    return SignalExtractionService()
+def get_signal_extractor() -> SignalExtractor:
+    return SignalExtractor()

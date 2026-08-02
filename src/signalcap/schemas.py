@@ -35,19 +35,12 @@ class ExtractedSignals(BaseModel):
         return value
 
 
-class MonthlyProjection(BaseModel):
-    """A single deterministic month in the SaaS forecast."""
-
-    month: int = Field(ge=1, le=12)
-    active_customers: float = Field(ge=0)
-    mrr: float = Field(ge=0)
-
-
 class ProjectionResponse(BaseModel):
     """Strict output returned by the model-generation endpoint."""
 
     model_config = ConfigDict(extra="forbid")
-    signals: ExtractedSignals
-    monthly_projection: list[MonthlyProjection] = Field(min_length=12, max_length=12)
+
+    monthly_mrr: list[float] = Field(min_length=12, max_length=12)
     cac_payback_period_months: float | None = Field(default=None, ge=0)
-    lifetime_value: float = Field(ge=0)
+    ltv: float = Field(ge=0)
+    extracted_signals: ExtractedSignals

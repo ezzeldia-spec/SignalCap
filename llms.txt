@@ -1,0 +1,40 @@
+# SYSTEM ARCHITECTURE & AI HANDOFF PROTOCOL
+
+## 1. Project Context
+- **Project:** SignalCap (AI-native financial modeling engine)
+- **Goal:** Translate qualitative customer discovery data into investor-ready financial models.
+- **Current Architecture:** Strict separation between the probabilistic LLM extraction layer and the deterministic Python calculation engine.
+
+## 2. Engineering Directives (CRITICAL)
+- **Modularity:** Keep separate things separate. Do not mix business logic with routing.
+- **Completeness:** The marginal cost of completeness is near zero. Do the whole thing. Do it right. Write tests. Provide documentation.
+- **No Workarounds:** Never offer to "table this for later" if the permanent solve is within reach. Never present a workaround when the real fix exists.
+- **Code Style:** Concise, technical, and no fluff. Focus entirely on logic and syntax. Enforce static typing.
+- **LLM Isolation:** Only `src/signalcap/extraction/service.py` may import or call the OpenAI SDK. It must extract typed facts only and must not calculate financial values.
+- **Determinism:** `src/signalcap/finance/` must remain pure Python with no I/O or LLM dependencies.
+
+## 3. Tech Stack & Constraints
+- **Backend:** Python 3.11+, FastAPI, Pydantic, OpenAI SDK.
+- **Frontend:** Not implemented in this repository.
+- **Persistence:** SQLAlchemy and a database are not currently part of the project; do not introduce them without an explicit requirement.
+- **Testing:** Pytest and pytest-asyncio. Test-driven development is mandatory. Mock all LLM calls; tests must never make network requests.
+- **Dependencies:** Do not add external dependencies unless strictly necessary. Document the reason in a code comment when doing so.
+
+## 4. Directory Map (Context)
+- `/src/signalcap/api` - FastAPI routing and dependency wiring only. No business logic.
+- `/src/signalcap/extraction` - LLM interaction, structured-output parsing, and `ExtractionError`.
+- `/src/signalcap/finance` - Deterministic Python financial calculations.
+- `/src/signalcap/schemas.py` - Pydantic request, extraction, and response contracts.
+- `/src/signalcap/main.py` - ASGI application factory.
+- `/tests` - Unit and integration tests.
+
+## 5. Financial Model Contract
+- Input is a validated `ExtractedSignals` object containing monthly ARPU, CAC, monthly churn fraction, lead-to-customer conversion fraction, and monthly leads.
+- For each of 12 months: apply churn to existing active customers, then add `monthly_leads * expected_conversion_rate` new customers.
+- Monthly MRR is active customers multiplied by willingness to pay.
+- CAC payback is `estimated_cac / willingness_to_pay`; return `None` for zero willingness to pay.
+- LTV is `willingness_to_pay / monthly_churn_percentage`; zero churn uses the named 60-month cap in the finance module.
+- `ProjectionResponse` exposes `monthly_mrr`, `cac_payback_period_months`, `ltv`, and `extracted_signals`.
+
+## 6. Current Session Objective
+

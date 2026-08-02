@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from signalcap.extraction import SignalExtractionError, SignalExtractionService
+from signalcap.extraction import ExtractionError, SignalExtractor
 
 
 class FakeCompletions:
@@ -27,7 +27,7 @@ async def test_extract_uses_strict_structured_output_without_math() -> None:
         "willingness_to_pay": 99.0, "estimated_cac": 250.0,
         "monthly_churn_percentage": 0.02, "expected_conversion_rate": 0.15, "monthly_leads": 30,
     }))
-    signals = await SignalExtractionService(client=client).extract("Customers said they would pay $99.")  # type: ignore[arg-type]
+    signals = await SignalExtractor(client=client).extract("Customers said they would pay $99.")  # type: ignore[arg-type]
     assert signals.willingness_to_pay == 99
     request = completions.calls[0]
     response_format = request["response_format"]  # type: ignore[index]
@@ -39,5 +39,5 @@ async def test_extract_uses_strict_structured_output_without_math() -> None:
 @pytest.mark.parametrize("content", [None, "not-json", '{"monthly_leads": 10}'])
 async def test_extract_maps_bad_output_to_domain_error(content: str | None) -> None:
     client, _ = fake_client(content)
-    with pytest.raises(SignalExtractionError):
-        await SignalExtractionService(client=client).extract("Interview")  # type: ignore[arg-type]
+    with pytest.raises(ExtractionError):
+        await SignalExtractor(client=client).extract("Interview")  # type: ignore[arg-type]

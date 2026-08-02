@@ -1,5 +1,5 @@
 """The isolated probabilistic extraction boundary."""
 
-from signalcap.extraction.service import SignalExtractionError, SignalExtractionService
+from signalcap.extraction.service import ExtractionError, SignalExtractor
 
-__all__ = ["SignalExtractionError", "SignalExtractionService"]
+__all__ = ["ExtractionError", "SignalExtractor"]
